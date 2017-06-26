@@ -17,6 +17,7 @@
         android:minWidth="40dp"
         android:layout_gravity="center"
         android:indeterminateDrawable="@drawable/loading_progress_rotate"
+        android:indeterminateDuration="1000"
         />
 
 </FrameLayout>

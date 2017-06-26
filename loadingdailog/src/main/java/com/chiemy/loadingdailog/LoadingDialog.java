@@ -1,13 +1,19 @@
 package com.chiemy.loadingdailog;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewPropertyAnimator;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
 
 /**
  * Created: chiemy
@@ -16,24 +22,32 @@ import android.view.WindowManager;
  */
 
 public class LoadingDialog {
+    private static final int SHORT_DURATION = 300;
+
     private Context mContext;
     private Builder mBuilder;
     private MyDialog mMyDialog;
+
+    private View mLoadingView;
 
     private LoadingDialog(Builder builder) {
         mBuilder = builder;
         mContext = builder.mContext;
         createDialog(builder);
+
+        LayoutInflater inflater = LayoutInflater.from(mContext);
+        mLoadingView = inflater.inflate(mBuilder.mLoadingView, null);
     }
 
     private void createDialog(Builder builder) {
         mMyDialog = new MyDialog(mContext);
         mMyDialog.setCancelable(false);
         mMyDialog.setCanceledOnTouchOutside(false);
+        mMyDialog.setBlockUserAction(builder.mBlockUserAction);
     }
 
     public void loading() {
-        mMyDialog.setContentView(mBuilder.mLoadingView);
+        mMyDialog.setContentView(mLoadingView);
         mMyDialog.show();
     }
 
@@ -121,5 +135,60 @@ public class LoadingDialog {
             window.setAttributes(params);
         }
 
+        @Override
+        public void onContentChanged() {
+        }
+
+        public View getRootView() {
+            Window window = getWindow();
+            View rootView = null;
+            if (window != null) {
+                rootView =  window.getDecorView().getRootView();
+            }
+            return rootView;
+        }
+
+        @Override
+        public void show() {
+            super.show();
+            View rootView = getRootView();
+
+            rootView.setAlpha(0.0F);
+            rootView.setScaleX(0.5F);
+            rootView.setScaleY(0.5F);
+
+            rootView
+                    .animate()
+                    .alpha(1.0F)
+                    .scaleX(1.0F)
+                    .scaleY(1.0F)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .setDuration(SHORT_DURATION)
+                    .start();
+        }
+
+        @Override
+        public void dismiss() {
+            Window window = getWindow();
+            View rootView = window.getDecorView().getRootView();
+
+            ViewPropertyAnimator animator =
+                    rootView
+                    .animate()
+                    .alpha(0F)
+                    .scaleX(1.5F)
+                    .scaleY(1.5F)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .setDuration(SHORT_DURATION);
+
+            animator.setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    MyDialog.super.dismiss();
+                }
+            });
+
+            animator.start();
+        }
     }
 }
